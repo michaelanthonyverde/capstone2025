@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - GRE Vocabulary App</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="auth.js" defer></script>
+</head>
+<body class="login-page">
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <div class="site-title">Group 2's AI-Powered GRE Vocabulary</div>
+      <div class="site-header__right">
+        <div class="site-user" id="siteUser" aria-live="polite"></div>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html" class="site-nav__link">Home</a>
+          <a href="learn.html" class="site-nav__link">Learn</a>
+          <a href="quiz.html" class="site-nav__link">Quiz</a>
+          <a href="profile.html" class="site-nav__link">Profile</a>
+          <a href="login.html" class="site-nav__link is-active" id="navLogin">Login</a>
+          <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container login-main">
+    <div class="login-card card login-container">
+      <h1>Welcome Back</h1>
+      <p class="muted">Sign in to keep your GRE vocabulary progress in sync.</p>
+      <form id="loginForm" class="login-form" novalidate>
+        <label class="form-field">
+          <span class="form-label">Username</span>
+          <input type="text" id="username" name="username" autocomplete="username" required>
+        </label>
+        <label class="form-field">
+          <span class="form-label">Password</span>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </label>
+        <p class="login-error" id="loginError" role="status" aria-live="polite"></p>
+        <button type="submit" class="btn login-submit">Login</button>
+      </form>
+      <p class="muted login-switch">Need an account?
+        <a href="signup.html">Create one</a>
+      </p>
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">Ac 2025 Group 2 - AI-Powered GRE Vocabulary</div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const errorEl = document.getElementById('loginError');
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        errorEl.textContent = '';
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username || !password) {
+          errorEl.textContent = 'Please enter both a username and password.';
+          return;
+        }
+
+        let users = [];
+        try {
+          const stored = JSON.parse(localStorage.getItem('users') || '[]');
+          if (Array.isArray(stored)) {
+            users = stored;
+          }
+        } catch (err) {
+          users = [];
+        }
+
+        const match = users.find((u) => u.username === username && u.password === password);
+        if (!match) {
+          errorEl.textContent = 'Invalid username or password.';
+          passwordInput.focus();
+          passwordInput.select();
+          return;
+        }
+
+        localStorage.setItem('loggedInUser', username);
+        window.location.href = 'index.html';
+      });
+    });
+  </script>
+</body>
+</html>

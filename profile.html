@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRE Vocabulary - Profile</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="auth.js" defer></script>
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <div class="site-title">Group 2's AI-Powered GRE Vocabulary</div>
+      <div class="site-header__right">
+        <div class="site-user" id="siteUser" aria-live="polite"></div>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html" class="site-nav__link">Home</a>
+          <a href="learn.html" class="site-nav__link">Learn</a>
+          <a href="quiz.html" class="site-nav__link">Quiz</a>
+          <a href="profile.html" class="site-nav__link is-active">Profile</a>
+          <a href="login.html" class="site-nav__link" id="navLogin">Login</a>
+          <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container section-lg">
+    <div class="card profile-card fade-slide">
+      <h1>Your Profile</h1>
+      <p class="muted">See the basics on your study progress and pick up where you left off.</p>
+
+      <dl class="profile-details">
+        <div class="profile-detail">
+          <dt>Username</dt>
+          <dd id="profileName">—</dd>
+        </div>
+        <div class="profile-detail">
+          <dt>Words Learned</dt>
+          <dd id="wordsLearned">0</dd>
+        </div>
+      </dl>
+
+      <div class="profile-actions">
+        <button type="button" class="btn" id="profileLogout">Logout</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">Ac 2025 Group 2 - AI-Powered GRE Vocabulary</div>
+  </footer>
+</body>
+</html>

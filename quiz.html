@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GRE Vocabulary Quiz</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="auth.js" defer></script>
+    <!-- React + Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="site-header__inner">
+        <div class="site-title">Group 2's AI-Powered GRE Vocabulary</div>
+        <div class="site-header__right">
+          <div class="site-user" id="siteUser" aria-live="polite"></div>
+          <nav class="site-nav" aria-label="Main">
+            <a href="index.html" class="site-nav__link">Home</a>
+            <a href="learn.html" class="site-nav__link">Learn</a>
+            <a href="quiz.html" class="site-nav__link is-active">Quiz</a>
+            <a href="profile.html" class="site-nav__link">Profile</a>
+            <a href="login.html" class="site-nav__link" id="navLogin">Login</a>
+            <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <div id="root"></div>
+    <div class="sr-status" aria-live="polite">Status</div>
+
+    <script type="text/babel">
+      function QuizPage() {
+        const [dataUrl] = React.useState("./data/words_difficulty.json");
+        const [allWords, setAllWords] = React.useState(null);
+        const [error, setError] = React.useState("");
+        const [difficulty, setDifficulty] = React.useState("all");
+        // Count selection: preset, custom, or all
+        const [countMode, setCountMode] = React.useState(() => localStorage.getItem('gre.countMode') || '20');
+        const [customCount, setCustomCount] = React.useState(() => {
+          const v = parseInt(localStorage.getItem('gre.customCount') || '20', 10);
+          return Number.isFinite(v) && v > 0 ? v : 20;
+        });
+        const [started, setStarted] = React.useState(false);
+        const [qIdx, setQIdx] = React.useState(0);
+        const [score, setScore] = React.useState(0);
+        const [locked, setLocked] = React.useState(false);
+        const [feedback, setFeedback] = React.useState(null); // { type: 'correct'|'incorrect', id }
+        const [restrictTerms, setRestrictTerms] = React.useState(null);
+        const [sessionResults, setSessionResults] = React.useState([]);
+
+        React.useEffect(() => {
+          (async () => {
+            try {
+              const r = await fetch(dataUrl, { cache: "no-store" });
+              if (!r.ok) throw new Error("Fetch failed");
+              const j = await r.json();
+              setAllWords(j);
+            } catch (e) {
+              setError("Couldn't load words_difficulty.json — using fallback.");
+              setAllWords([
+                { term: "pithy", definition: "concise and forcefully expressive", difficulty: "high_frequency" },
+                { term: "abate", definition: "to become less intense or widespread", difficulty: "common" },
+                { term: "erudite", definition: "having or showing great knowledge", difficulty: "advanced" }
+              ]);
+            }
+          })();
+        }, []);
+
+        // Check for selection coming from Learn page
+        React.useEffect(() => {
+          try {
+            const sel = sessionStorage.getItem('gre.learnSelection');
+            if (sel) {
+              const parsed = JSON.parse(sel);
+              if (parsed && Array.isArray(parsed.terms) && parsed.terms.length) {
+                setRestrictTerms(new Set(parsed.terms.map(t => String(t).toLowerCase())));
+              }
+            }
+          } catch(e) { /* ignore */ }
+        }, []);
+
+        function cleanDefinition(raw, term) {
+          if (!raw || typeof raw !== "string") return "";
+          const firstBlock = raw.split(/\n{2,}/)[0].trim();
+          const t = (term || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          // Only strip POS when followed by a colon to avoid clipping real words
+          const withWordPos = new RegExp('^\\s*' + t + '\\s+\\(?(?:adjective|adj|noun|n|verb|v|adverb|adv|vt|vi)\\.?\\)?\\s*:\\s*', 'i');
+          let s = firstBlock.replace(withWordPos, '');
+          s = s.replace(/^\s*\(?(?:adjective|adj|noun|n|verb|v|adverb|adv|vt|vi)\.?\)?\s*:\s*/i, '');
+          s = s.replace(/\s+/g, ' ').trim();
+          return s;
+        }
+
+        const filtered = React.useMemo(() => {
+          if (!allWords) return [];
+          let pool = allWords.filter(w => w.term && w.definition);
+          pool = pool.map(w => ({ ...w, cleanDef: cleanDefinition(w.definition, w.term) }))
+                     .filter(w => w.cleanDef);
+          if (restrictTerms) {
+            pool = pool.filter(w => restrictTerms.has(String(w.term).toLowerCase()));
+          }
+          if (difficulty !== "all") pool = pool.filter(w => (w.difficulty || "").toLowerCase() === difficulty);
+          return pool;
+        }, [allWords, difficulty, restrictTerms]);
+
+        // Validate custom count against pool size
+        const availableCount = filtered.length;
+        const chosenCount = React.useMemo(() => {
+          if (countMode === 'all') return availableCount;
+          if (countMode === 'custom') return customCount;
+          const n = parseInt(countMode, 10);
+          return Number.isFinite(n) ? n : 20;
+        }, [countMode, customCount, availableCount]);
+        const countError = React.useMemo(() => {
+          if (countMode !== 'custom') return '';
+          if (!Number.isInteger(customCount) || customCount < 1) return 'Enter a number ≥ 1';
+          if (customCount > availableCount) return `Max available for this difficulty is ${availableCount}`;
+          return '';
+        }, [countMode, customCount, availableCount]);
+        const canStart = availableCount > 0 && !countError;
+
+        // Persist last selection
+        React.useEffect(() => {
+          localStorage.setItem('gre.countMode', String(countMode));
+        }, [countMode]);
+        React.useEffect(() => {
+          if (Number.isFinite(customCount)) {
+            localStorage.setItem('gre.customCount', String(customCount));
+          }
+        }, [customCount]);
+
+        // Auto-hide feedback toast
+        React.useEffect(() => {
+          if (!feedback) return;
+          const t = setTimeout(() => setFeedback(null), 1100);
+          return () => clearTimeout(t);
+        }, [feedback]);
+
+        const [questions, setQuestions] = React.useState([]);
+
+        function shuffle(arr){
+          const a = arr.slice();
+          for (let i = a.length - 1; i > 0; i--){
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        }
+
+        function buildChoices(correct, pool){
+          const uniqueDefs = Array.from(new Set(pool));
+          const wrongs = shuffle(uniqueDefs.filter(d => d !== correct)).slice(0,3);
+          return shuffle([correct, ...wrongs]);
+        }
+
+        function speak(text){
+          try {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(u);
+          } catch (e) {
+            console.error("Speech synthesis failed:", e);
+          }
+        }
+
+        function startQuiz(){
+          const pool = filtered.slice();
+          const finalCount = Math.min(chosenCount, pool.length);
+          const chosen = shuffle(pool).slice(0, finalCount);
+          const defs = chosen.map(w => w.cleanDef);
+          const qs = chosen.map(w => ({
+            word: w,
+            prompt: `What is the definition of ${w.term}?`,
+            correct: w.cleanDef,
+            choices: []
+          }));
+          qs.forEach(q => q.choices = buildChoices(q.correct, defs));
+          setQuestions(qs);
+          setStarted(true);
+          setQIdx(0);
+          setScore(0);
+          setLocked(false);
+          setSessionResults([]);
+        }
+
+        function onAnswer(choice){
+          if (locked) return;
+          const q = questions[qIdx];
+          const isCorrect = choice === q.correct;
+          setLocked(true);
+          if (isCorrect) setScore(s => s + 1);
+          setSessionResults(prev => ([
+            ...prev,
+            {
+              index: qIdx,
+              term: q.word.term,
+              difficulty: (q.word.difficulty || '').toLowerCase(),
+              definition: q.word.cleanDef || q.correct,
+              partOfSpeech: (q.word.linguistics && (q.word.linguistics.part_of_speech || q.word.linguistics.partOfSpeech)) || '',
+              example: q.word.example || '',
+              chosen: choice,
+              isCorrect
+            }
+          ]));
+          setFeedback({ type: isCorrect ? 'correct' : 'incorrect', id: Date.now() });
+        }
+
+        function next(){
+          if (qIdx + 1 < questions.length){
+            setQIdx(i => i + 1);
+            setLocked(false);
+          } else {
+            // Build summary and persist to sessionStorage, then go to results page
+            const total = questions.length;
+            const correct = score;
+            const percent = total ? Math.round((correct / total) * 100) : 0;
+            const byDifficulty = sessionResults.reduce((acc, r) => {
+              const key = r.difficulty || 'unknown';
+              if (!acc[key]) acc[key] = { total: 0, correct: 0 };
+              acc[key].total += 1;
+              if (r.isCorrect) acc[key].correct += 1;
+              return acc;
+            }, {});
+            const summary = { total, correct, percent, byDifficulty };
+            try {
+              sessionStorage.setItem('gre.summary', JSON.stringify(summary));
+              sessionStorage.setItem('gre.results', JSON.stringify(sessionResults));
+            } catch(e) { /* ignore */ }
+            window.location.href = 'results.html';
+          }
+        }
+
+        const progressPct = questions.length ? Math.round((qIdx / questions.length) * 100) : 0;
+
+        return (
+          <div className="container">
+            <h1>GRE Vocabulary Quiz</h1>
+            {error && <p className="muted fade-slide" aria-live="polite">{error}</p>}
+
+            {/* Feedback toast */}
+            {feedback && (
+              <div className={`toast ${feedback.type}`} role="status" aria-live="assertive">
+                {feedback.type === 'correct' ? 'Correct' : 'Incorrect'}
+              </div>
+            )}
+
+            {!started && (
+              <div className="card">
+                <label>
+                  Difficulty
+                  <select value={difficulty} onChange={e=>setDifficulty(e.target.value)} style={{marginLeft:8}}>
+                    <option value="all">All</option>
+                    <option value="high_frequency">High Frequency</option>
+                    <option value="basic">Basic</option>
+                    <option value="common">Common</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </label>
+                <div className="row" style={{marginTop:8, alignItems:'center', gap:8}}>
+                  <label>
+                    Questions
+                    <select value={countMode} onChange={e=>setCountMode(e.target.value)} style={{marginLeft:8}}>
+                      <option value={'10'}>10</option>
+                      <option value={'20'}>20</option>
+                      <option value={'50'}>50</option>
+                      <option value={'100'}>100</option>
+                      <option value={'custom'}>Custom</option>
+                      <option value={'all'}>All</option>
+                    </select>
+                  </label>
+                  {countMode === 'custom' && (
+                    <label style={{marginLeft:8}}>
+                      Count
+                      <input
+                        type="number"
+                        value={customCount}
+                        min={1}
+                        max={availableCount || 1}
+                        step={1}
+                        onChange={e=>setCustomCount(parseInt(e.target.value || '0',10))}
+                        style={{marginLeft:8, padding:'6px 8px', borderRadius:12, border:'1px solid #B2B4B2', width:96}}
+                      />
+                    </label>
+                  )}
+                  {countError && <span className="muted" style={{marginLeft:8}}>{countError}</span>}
+                  <button className="btn" disabled={!canStart} onClick={startQuiz} style={{marginLeft:8}}>Start</button>
+                </div>
+              </div>
+            )}
+
+            {started && questions.length > 0 && (
+              <div className="card">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div><b>Score:</b> {score} / {qIdx}</div>
+                  <button className="btn" onClick={()=>speak(questions[qIdx].word.term)}>Speak</button>
+                </div>
+                <div className="progress quiz-progress">
+                  <div className="progress-fill" style={{width:`${progressPct}%`}}></div>
+                </div>
+                <div className="question-block">
+                  <h2>{questions[qIdx].prompt}</h2>
+                  {questions[qIdx].choices.map((c) => (
+                    <button
+                      key={c}
+                      disabled={locked}
+                      className="btn answer"
+                      onClick={()=>onAnswer(c)}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+
+                {locked && <button className="btn" onClick={next}>Next</button>}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<QuizPage />);
+    </script>
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">© 2025 Group 2 - AI-Powered GRE Vocabulary</div>
+  </footer>
+  </body>
+  </html>

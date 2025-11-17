@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRE Vocabulary - Learn</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="auth.js" defer></script>
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <div class="site-title">Group 2's AI-Powered GRE Vocabulary</div>
+      <div class="site-header__right">
+        <div class="site-user" id="siteUser" aria-live="polite"></div>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html" class="site-nav__link">Home</a>
+          <a href="learn.html" class="site-nav__link is-active">Learn</a>
+          <a href="quiz.html" class="site-nav__link">Quiz</a>
+          <a href="profile.html" class="site-nav__link">Profile</a>
+          <a href="login.html" class="site-nav__link" id="navLogin">Login</a>
+          <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container section-lg">
+    <div class="card">
+      <h1>Learn</h1>
+      <p class="muted">Browse words by difficulty and search filtered sets.</p>
+    </div>
+
+    <div class="learn-toolbar">
+      <div class="learn-tabs" id="learn-tabs" role="tablist" aria-label="Difficulty tabs"></div>
+      <div class="row" style="gap:8px; align-items:center;">
+        <input id="learn-search" type="search" placeholder="Search term"
+          style="padding:10px 12px; border:1px solid #B2B4B2; border-radius:12px;" aria-label="Search term" />
+        <select id="learn-pageSize" aria-label="Page size"
+          style="padding:8px 10px; border:1px solid #B2B4B2; border-radius:12px;">
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="muted" id="learn-live" aria-live="polite"></div>
+
+    <div id="learn-list" class="learn-list"></div>
+
+    <div class="row" style="justify-content:space-between; align-items:center; margin-top:12px;">
+      <div id="learn-range" class="muted"></div>
+      <div class="row" style="gap:8px;">
+        <button id="learn-prev" class="btn btn-ghost">Prev</button>
+        <button id="learn-next" class="btn btn-ghost">Next</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">© 2025 Group 2 - AI-Powered GRE Vocabulary</div>
+  </footer>
+
+  <!-- external script -->
+  <script src="learn.js"></script>
+</body>
+</html>
+
+
+

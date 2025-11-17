@@ -1,6 +1,6 @@
 // Learn page script: data fetch + filters + paging
 (function(){
-  const DATA_URL = './data/words_difficulty.json';
+  const DATA_URL = './Data/words_difficulty.json';
 
   const tabsEl = document.getElementById('learn-tabs');
   const listEl = document.getElementById('learn-list');

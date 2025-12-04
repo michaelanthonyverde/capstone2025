@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - Group 2 GRE Vocabulary</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="auth.js" defer></script>
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <div class="site-title">Group 2's AI-Powered GRE Vocabulary</div>
+      <div class="site-header__right">
+        <div class="site-user" id="siteUser" aria-live="polite"></div>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html" class="site-nav__link">Home</a>
+          <a href="learn.html" class="site-nav__link">Learn</a>
+          <a href="quiz.html" class="site-nav__link">Quiz</a>
+          <a href="profile.html" class="site-nav__link">Profile</a>
+          <a href="aboutus.html" class="site-nav__link is-active">About</a>
+          <a href="login.html" class="site-nav__link" id="navLogin">Login</a>
+          <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container section-lg">
+    <div class="card">
+      <h1>About This Project</h1>
+      <p class="muted">This site is Group 2's AI-powered GRE vocabulary capstone project, built around a curated list of test-ready words. It uses adaptive hints guided by a Q-learning approach to respond to how you study and what you miss. The goal is to keep feedback quick, focused, and transparent so you can move through words with confidence.</p>
+    </div>
+
+    <div class="cards-row grid">
+      <div class="card">
+        <h2>Project Goals</h2>
+        <ul class="muted">
+          <li>Deliver focused GRE vocabulary practice with curated difficulty.</li>
+          <li>Surface adaptive hints that adjust to each learner's patterns.</li>
+          <li>Keep the experience fast, clean, and distraction-free.</li>
+          <li>Make progress easy to pick up across sessions and devices.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>How the Quiz Works</h2>
+        <p class="muted">Each quiz pulls balanced words across difficulty levels and tracks your correct choices. As you answer, the Q-learning hint logic nudges you with brief cues that favor gaps in your history, so the hints get sharper the more you practice.</p>
+      </div>
+
+      <div class="card">
+        <h2>Sponsor Collaboration</h2>
+        <p class="muted">Our adaptive hint model started as a Python engine provided by the sponsor. We reimplemented that Q-learning flow in JavaScript so everything runs directly in the browser without a backend dependency.</p>
+      </div>
+
+      <div class="card">
+        <h2>Future Improvements</h2>
+        <ul class="muted">
+          <li>Spaced-repetition scheduling for word review.</li>
+          <li>Audio pronunciations and richer examples.</li>
+          <li>Progress dashboards with streaks and mastery levels.</li>
+          <li>Offline-friendly study mode.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+

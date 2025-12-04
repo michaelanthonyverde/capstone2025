@@ -18,6 +18,7 @@
           <a href="learn.html" class="site-nav__link">Learn</a>
           <a href="quiz.html" class="site-nav__link">Quiz</a>
           <a href="profile.html" class="site-nav__link is-active">Profile</a>
+          <a href="aboutus.html" class="site-nav__link">About</a>
           <a href="login.html" class="site-nav__link" id="navLogin">Login</a>
           <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
         </nav>
@@ -26,29 +27,39 @@
   </header>
 
   <main class="container section-lg">
-    <div class="card profile-card fade-slide">
-      <h1>Your Profile</h1>
-      <p class="muted">See the basics on your study progress and pick up where you left off.</p>
-
-      <dl class="profile-details">
-        <div class="profile-detail">
-          <dt>Username</dt>
-          <dd id="profileName">—</dd>
-        </div>
-        <div class="profile-detail">
-          <dt>Words Learned</dt>
-          <dd id="wordsLearned">0</dd>
-        </div>
-      </dl>
-
+    <div class="card profile-card fade-slide" id="profileSignedIn" hidden>
+      <h1 id="profileGreeting">Welcome back</h1>
+      <p class="muted" id="profileDescription">This profile uses your local display name to personalize your GRE vocab practice.</p>
       <div class="profile-actions">
         <button type="button" class="btn" id="profileLogout">Logout</button>
       </div>
     </div>
-  </main>
 
-  <footer class="site-footer" role="contentinfo">
-    <div class="site-footer__inner">Ac 2025 Group 2 - AI-Powered GRE Vocabulary</div>
-  </footer>
+    <div class="card fade-slide" id="profileSignedOut" hidden>
+      <h1>You're not signed in</h1>
+      <p class="muted">Add a display name to personalize your GRE vocabulary study.</p>
+      <div class="profile-actions">
+        <a class="btn" href="login.html">Set display name</a>
+      </div>
+    </div>
+  </main><script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const name = (localStorage.getItem('gre.userName') || '').trim();
+      const isSignedIn = !!name;
+      const signedInCard = document.getElementById('profileSignedIn');
+      const signedOutCard = document.getElementById('profileSignedOut');
+      const greeting = document.getElementById('profileGreeting');
+      const desc = document.getElementById('profileDescription');
+
+      if (signedInCard) signedInCard.hidden = !isSignedIn;
+      if (signedOutCard) signedOutCard.hidden = isSignedIn;
+
+      if (isSignedIn) {
+        if (greeting) greeting.textContent = `Welcome back, ${name}`;
+        if (desc) desc.textContent = 'Your display name lives in this browser and keeps your quiz experience personal.';
+      }
+    });
+  </script>
 </body>
 </html>
+

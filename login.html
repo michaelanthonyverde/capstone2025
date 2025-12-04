@@ -18,6 +18,7 @@
           <a href="learn.html" class="site-nav__link">Learn</a>
           <a href="quiz.html" class="site-nav__link">Quiz</a>
           <a href="profile.html" class="site-nav__link">Profile</a>
+          <a href="aboutus.html" class="site-nav__link">About</a>
           <a href="login.html" class="site-nav__link is-active" id="navLogin">Login</a>
           <button type="button" class="site-nav__link site-nav__button" id="navLogout" hidden>Logout</button>
         </nav>
@@ -27,71 +28,47 @@
 
   <main class="container login-main">
     <div class="login-card card login-container">
-      <h1>Welcome Back</h1>
-      <p class="muted">Sign in to keep your GRE vocabulary progress in sync.</p>
+      <h1>Choose a display name</h1>
+      <p class="muted">This name is stored only in your browser to personalize your experience.</p>
       <form id="loginForm" class="login-form" novalidate>
         <label class="form-field">
-          <span class="form-label">Username</span>
-          <input type="text" id="username" name="username" autocomplete="username" required>
-        </label>
-        <label class="form-field">
-          <span class="form-label">Password</span>
-          <input type="password" id="password" name="password" autocomplete="current-password" required>
+          <span class="form-label">Display name</span>
+          <input type="text" id="displayNameInput" name="displayName" autocomplete="off" required>
         </label>
         <p class="login-error" id="loginError" role="status" aria-live="polite"></p>
-        <button type="submit" class="btn login-submit">Login</button>
+        <button type="submit" class="btn login-submit">Continue</button>
       </form>
-      <p class="muted login-switch">Need an account?
-        <a href="signup.html">Create one</a>
-      </p>
     </div>
-  </main>
-
-  <footer class="site-footer" role="contentinfo">
-    <div class="site-footer__inner">Ac 2025 Group 2 - AI-Powered GRE Vocabulary</div>
-  </footer>
-
-  <script>
+  </main><script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('loginForm');
-      const usernameInput = document.getElementById('username');
-      const passwordInput = document.getElementById('password');
+      const nameInput = document.getElementById('displayNameInput');
       const errorEl = document.getElementById('loginError');
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         errorEl.textContent = '';
 
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!username || !password) {
-          errorEl.textContent = 'Please enter both a username and password.';
+        const name = (nameInput.value || '').trim();
+        if (!name) {
+          errorEl.textContent = 'Please enter a display name.';
+          nameInput.focus();
           return;
         }
 
-        let users = [];
-        try {
-          const stored = JSON.parse(localStorage.getItem('users') || '[]');
-          if (Array.isArray(stored)) {
-            users = stored;
+        if (window.greAuth && typeof window.greAuth.setUserName === 'function') {
+          window.greAuth.setUserName(name);
+          if (typeof window.greAuth.updateHeader === 'function') {
+            window.greAuth.updateHeader();
           }
-        } catch (err) {
-          users = [];
+        } else {
+          localStorage.setItem('gre.userName', name);
         }
 
-        const match = users.find((u) => u.username === username && u.password === password);
-        if (!match) {
-          errorEl.textContent = 'Invalid username or password.';
-          passwordInput.focus();
-          passwordInput.select();
-          return;
-        }
-
-        localStorage.setItem('loggedInUser', username);
-        window.location.href = 'index.html';
+        window.location.href = 'profile.html';
       });
     });
   </script>
 </body>
 </html>
+

@@ -1,6 +1,4 @@
-// quiz.js (no localStorage; uses window.WORDS from words.js)
 (function () {
-  // Fallback data if words.js wasn't loaded
   const DEFAULT_WORDS = [
     { term: "pithy", definition: "concise and forcefully expressive", partOfSpeech: "adj.", hint: "Short but powerful." },
     { term: "equivocate", definition: "to use ambiguous language to conceal the truth", partOfSpeech: "verb", hint: "Saying things without saying them." },
@@ -13,13 +11,11 @@
     ? window.WORDS
     : DEFAULT_WORDS;
 
-  // --- DOM references (must exist in quiz.html) ---
   const scoreEl   = document.getElementById("score");
   const qEl       = document.getElementById("question");
   const answersEl = document.getElementById("answers");
   const nextBtn   = document.getElementById("nextBtn");
 
-  // --- Helpers ---
   const shuffle = (arr) => {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -34,19 +30,17 @@
     return shuffle([correct, ...wrongs]);
   };
 
-  // --- Build question set ---
   let questions = SOURCE.map(w => ({
     prompt: `What is the best definition of "${w.term}" (${w.partOfSpeech})?`,
     correct: w.definition,
     hint: w.hint || "",
-    choices: [] // fill next
+    choices: []
   }));
 
   const defs = SOURCE.map(w => w.definition);
   questions.forEach(q => q.choices = buildChoices(q.correct, defs));
   questions = shuffle(questions);
 
-  // --- State ---
   let qIdx = 0;
   let score = 0;
   let locked = false;
@@ -64,7 +58,7 @@
     q.choices.forEach(choice => {
       const btn = document.createElement("button");
       btn.textContent = choice;
-      btn.className = "btn"; // will pick up your CSS button look if present
+      btn.className = "btn";
       btn.style.display = "block";
       btn.style.margin = "8px 0";
       btn.onclick = () => handleAnswer(btn, choice === q.correct, q.hint);
@@ -110,7 +104,6 @@
     }
   };
 
-  // kick things off
   updateScore();
   renderQuestion();
 })();

@@ -35,6 +35,16 @@
       </div>
     </div>
 
+    <section class="card">
+      <h2>Your Vocabulary Progress</h2>
+      <p class="muted">
+        Words seen: <span id="profileWordsSeen">0</span>
+      </p>
+      <p class="muted">
+        Words learned: <span id="profileWordsLearned">0</span>
+      </p>
+    </section>
+
     <div class="card fade-slide" id="profileSignedOut" hidden>
       <h1>You're not signed in</h1>
       <p class="muted">Add a display name to personalize your GRE vocabulary study.</p>
@@ -42,7 +52,8 @@
         <a class="btn" href="login.html">Set display name</a>
       </div>
     </div>
-  </main><script>
+  </main>
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
       const name = (localStorage.getItem('gre.userName') || '').trim();
       const isSignedIn = !!name;
@@ -58,6 +69,24 @@
         if (greeting) greeting.textContent = `Welcome back, ${name}`;
         if (desc) desc.textContent = 'Your display name lives in this browser and keeps your quiz experience personal.';
       }
+
+      const seenEl = document.getElementById('profileWordsSeen');
+      const learnedEl = document.getElementById('profileWordsLearned');
+      let wordsSeen = 0;
+      let wordsLearned = 0;
+      try {
+        const raw = localStorage.getItem('wordStats');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            const entries = Object.entries(parsed);
+            wordsSeen = entries.length;
+            wordsLearned = entries.reduce((acc, [, stat]) => acc + (stat && stat.learned ? 1 : 0), 0);
+          }
+        }
+      } catch (e) { }
+      if (seenEl) seenEl.textContent = wordsSeen;
+      if (learnedEl) learnedEl.textContent = wordsLearned;
     });
   </script>
 </body>

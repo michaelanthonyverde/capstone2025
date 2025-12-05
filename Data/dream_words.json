@@ -1,0 +1,47 @@
+[
+  {
+    "term": "oneiric",
+    "difficulty": "advanced",
+    "definition": "Relating to dreams or dreaming, especially in a strange, surreal, or dreamlike way.",
+    "example": "The director’s oneiric visuals made the entire film feel like a half-remembered dream.",
+    "linguistics": {
+      "part_of_speech": "adjective"
+    }
+  },
+  {
+    "term": "hypnagogic",
+    "difficulty": "advanced",
+    "definition": "Relating to the state immediately before falling asleep, when thoughts and images drift freely.",
+    "example": "She often had vivid hypnagogic hallucinations as she drifted off to sleep.",
+    "linguistics": {
+      "part_of_speech": "adjective"
+    }
+  },
+  {
+    "term": "surreal",
+    "difficulty": "common",
+    "definition": "Strangely unreal or dreamlike, often by combining ordinary things in bizarre or impossible ways.",
+    "example": "Walking through the empty city at dawn felt surreal, like a scene from a fantasy novel.",
+    "linguistics": {
+      "part_of_speech": "adjective"
+    }
+  },
+  {
+    "term": "lucid",
+    "difficulty": "common",
+    "definition": "Clear and easy to understand; in psychology, describing a type of dream in which the dreamer is aware they are dreaming.",
+    "example": "His explanation was so lucid that even tired students could follow it.",
+    "linguistics": {
+      "part_of_speech": "adjective"
+    }
+  },
+  {
+    "term": "reverie",
+    "difficulty": "basic",
+    "definition": "A state of pleasantly being lost in one’s thoughts; a daydream.",
+    "example": "She snapped out of her reverie when someone called her name from across the room.",
+    "linguistics": {
+      "part_of_speech": "noun"
+    }
+  }
+]

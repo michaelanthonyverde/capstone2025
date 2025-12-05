@@ -39,6 +39,20 @@
       const ALPHA = 0.3;
       const GAMMA = 0.9;
 
+      const DREAM_WORD_GIFS = {
+        oneiric: "./data/dream1.gif",
+        hypnagogic: "./data/dream2.gif",
+        surreal: "./data/dream3.gif",
+        lucid: "./data/dream4.gif",
+        reverie: "./data/dream5.gif"
+      };
+
+      function getDreamGifForWord(term) {
+        if (!term) return null;
+        const key = String(term).toLowerCase();
+        return DREAM_WORD_GIFS[key] || null;
+      }
+
       function getWordId(word){
         return String(word && word.term ? word.term : "").toLowerCase();
       }
@@ -84,7 +98,9 @@
         entry.seen += 1;
         if (isCorrect) entry.correct += 1;
         else entry.incorrect += 1;
-        entry.learned = entry.correct >= 3 && entry.correct > entry.incorrect;
+        const total = (entry.correct || 0) + (entry.incorrect || 0);
+        const accuracy = total > 0 ? entry.correct / total : 0;
+        entry.learned = total >= 3 && accuracy >= 0.7;
         stats[wordId] = entry;
         setWordStats(stats);
       }
@@ -141,7 +157,7 @@
           const v = parseInt(localStorage.getItem('gre.customCount') || '20', 10);
           return Number.isFinite(v) && v > 0 ? v : 20;
         });
-        const [mode, setMode] = React.useState('quick');
+        const [quizMode, setQuizMode] = React.useState('quick'); // quick | study | dream
         const [started, setStarted] = React.useState(false);
         const [qIdx, setQIdx] = React.useState(0);
         const [score, setScore] = React.useState(0);
@@ -150,6 +166,8 @@
         const [restrictTerms, setRestrictTerms] = React.useState(null);
         const [sessionResults, setSessionResults] = React.useState([]);
         const [hintType, setHintType] = React.useState("noHint");
+        const [dreamGif, setDreamGif] = React.useState(null);
+        const [showHint, setShowHint] = React.useState(false);
 
         React.useEffect(() => {
           (async () => {
@@ -217,7 +235,7 @@
           if (customCount > availableCount) return `Max available for this difficulty is ${availableCount}`;
           return '';
         }, [countMode, customCount, availableCount]);
-        const canStart = availableCount > 0 && !countError;
+        const canStart = quizMode === 'dream' ? true : (availableCount > 0 && !countError);
 
         React.useEffect(() => {
           localStorage.setItem('gre.countMode', String(countMode));
@@ -261,7 +279,64 @@
           }
         }
 
+        function readQuestionAndChoices() {
+          if (!questions || !questions.length) return;
+          const q = questions[qIdx];
+          if (!q) return;
+          const choicesText = q.choices && q.choices.length
+            ? q.choices.join(", ")
+            : "";
+          const fullText = choicesText
+            ? `${q.prompt}. Choices: ${choicesText}.`
+            : q.prompt;
+          speak(fullText);
+        }
+
+        function forceHintNow() {
+          // If no hint exists, force a definition-based hint
+          if (hintType === "noHint") {
+            setHintType("definition");
+          }
+          setShowHint(true);
+        }
+
         function startQuiz(){
+          setDreamGif(null);
+          if (quizMode === 'dream'){
+            fetch("./data/dream_words.json", { cache: "no-store" })
+              .then(r => {
+                if (!r.ok) throw new Error("Dream fetch failed");
+                return r.json();
+              })
+              .then(dreamWords => {
+                const normalized = (Array.isArray(dreamWords) ? dreamWords : [])
+                  .filter(w => w && w.term && w.definition)
+                  .map(w => ({ ...w, cleanDef: cleanDefinition(w.definition, w.term) }))
+                  .filter(w => w.cleanDef);
+                const defs = normalized.map(w => w.cleanDef);
+                const qs = normalized.map(w => ({
+                  word: w,
+                  prompt: buildPrompt(w.term),
+                  correct: w.cleanDef,
+                  choices: []
+                }));
+                qs.forEach(q => q.choices = buildChoices(q.correct, defs));
+                setQuestions(qs);
+                setStarted(true);
+                setQIdx(0);
+                setScore(0);
+                setLocked(false);
+                setSessionResults([]);
+                setHintType("noHint");
+                setShowHint(false);
+              })
+              .catch(() => {
+                setError("Couldn't load dream words.");
+                setQuestions([]);
+                setStarted(false);
+              });
+            return;
+          }
           const pool = filtered.slice();
           const finalCount = Math.min(chosenCount, pool.length);
           const chosen = shuffle(pool).slice(0, finalCount);
@@ -280,6 +355,7 @@
           setLocked(false);
           setSessionResults([]);
           setHintType("noHint");
+          setShowHint(false);
         }
 
         function onAnswer(choice){
@@ -288,7 +364,8 @@
           const isCorrect = choice === q.correct;
           const wordId = getWordId(q.word);
           const reward = isCorrect ? (hintType === "noHint" ? 1 : 0.5) : -0.5;
-          if (mode === 'quick') {
+          const currentTerm = q && q.word && q.word.term;
+          if (quizMode === 'quick') {
             setLocked(true);
             if (isCorrect) setScore(s => s + 1);
           } else {
@@ -298,6 +375,15 @@
             } else {
               setLocked(false);
             }
+          }
+          if (quizMode === 'dream') {
+            if (!isCorrect) {
+              setDreamGif(getDreamGifForWord(currentTerm));
+            } else {
+              setDreamGif(null);
+            }
+          } else {
+            setDreamGif(null);
           }
           setSessionResults(prev => ([
             ...prev,
@@ -318,9 +404,11 @@
         }
 
         function next(){
+          setDreamGif(null);
           if (qIdx + 1 < questions.length){
             setQIdx(i => i + 1);
             setLocked(false);
+            setShowHint(false);
           } else {
             const total = questions.length;
             const correct = score;
@@ -366,24 +454,39 @@
           const wordId = getWordId(q.word);
           const selectedHint = chooseHintType(wordId);
           setHintType(selectedHint);
+          setShowHint(false);
         }, [started, qIdx, questions]);
 
         return (
           <div className="container">
             <h1>GRE Vocabulary Quiz</h1>
-            {error && <p className="muted fade-slide" aria-live="polite">{error}</p>}
+
+            {error && (
+              <p className="muted fade-slide" aria-live="polite">
+                {error}
+              </p>
+            )}
 
             {feedback && (
-              <div className={`toast ${feedback.type}`} role="status" aria-live="assertive">
-                {feedback.type === 'correct' ? 'Correct' : 'Incorrect'}
+              <div
+                className={`toast ${feedback.type}`}
+                role="status"
+                aria-live="assertive"
+              >
+                {feedback.type === "correct" ? "Correct" : "Incorrect"}
               </div>
             )}
 
+            {/* SETUP CARD */}
             {!started && (
               <div className="card">
                 <label>
                   Difficulty
-                  <select value={difficulty} onChange={e=>setDifficulty(e.target.value)} style={{marginLeft:8}}>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    style={{ marginLeft: 8 }}
+                  >
                     <option value="all">All</option>
                     <option value="high_frequency">High Frequency</option>
                     <option value="basic">Basic</option>
@@ -391,20 +494,29 @@
                     <option value="advanced">Advanced</option>
                   </select>
                 </label>
-                <div className="row" style={{marginTop:8, alignItems:'center', gap:8}}>
+
+                <div
+                  className="row"
+                  style={{ marginTop: 8, alignItems: "center", gap: 8 }}
+                >
                   <label>
                     Questions
-                    <select value={countMode} onChange={e=>setCountMode(e.target.value)} style={{marginLeft:8}}>
-                      <option value={'10'}>10</option>
-                      <option value={'20'}>20</option>
-                      <option value={'50'}>50</option>
-                      <option value={'100'}>100</option>
-                      <option value={'custom'}>Custom</option>
-                      <option value={'all'}>All</option>
+                    <select
+                      value={countMode}
+                      onChange={(e) => setCountMode(e.target.value)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <option value={"10"}>10</option>
+                      <option value={"20"}>20</option>
+                      <option value={"50"}>50</option>
+                      <option value={"100"}>100</option>
+                      <option value={"custom"}>Custom</option>
+                      <option value={"all"}>All</option>
                     </select>
                   </label>
-                  {countMode === 'custom' && (
-                    <label style={{marginLeft:8}}>
+
+                  {countMode === "custom" && (
+                    <label style={{ marginLeft: 8 }}>
                       Count
                       <input
                         type="number"
@@ -412,72 +524,192 @@
                         min={1}
                         max={availableCount || 1}
                         step={1}
-                        onChange={e=>setCustomCount(parseInt(e.target.value || '0',10))}
-                        style={{marginLeft:8, padding:'6px 8px', borderRadius:12, border:'1px solid #B2B4B2', width:96}}
+                        onChange={(e) =>
+                          setCustomCount(
+                            parseInt(e.target.value || "0", 10)
+                          )
+                        }
+                        style={{
+                          marginLeft: 8,
+                          padding: "6px 8px",
+                          borderRadius: 12,
+                          border: "1px solid #B2B4B2",
+                          width: 96
+                        }}
                       />
                     </label>
                   )}
-                  {countError && <span className="muted" style={{marginLeft:8}}>{countError}</span>}
-                  <div className="row" style={{marginLeft:8, gap:12}}>
+
+                  {countError && (
+                    <span className="muted" style={{ marginLeft: 8 }}>
+                      {countError}
+                    </span>
+                  )}
+
+                  <div className="row" style={{ marginLeft: 8, gap: 12 }}>
                     <label className="muted">
                       <input
                         type="radio"
                         name="mode"
                         value="quick"
-                        checked={mode === 'quick'}
-                        onChange={()=>setMode('quick')}
-                        style={{marginRight:6}}
+                        checked={quizMode === "quick"}
+                        onChange={() => setQuizMode("quick")}
+                        style={{ marginRight: 6 }}
                       />
                       Quick Quiz
                     </label>
+
                     <label className="muted">
                       <input
                         type="radio"
                         name="mode"
                         value="study"
-                        checked={mode === 'study'}
-                        onChange={()=>setMode('study')}
-                        style={{marginRight:6}}
+                        checked={quizMode === "study"}
+                        onChange={() => setQuizMode("study")}
+                        style={{ marginRight: 6 }}
                       />
                       Study Quiz
                     </label>
+
+                    <label className="muted">
+                      <input
+                        type="radio"
+                        name="mode"
+                        value="dream"
+                        checked={quizMode === "dream"}
+                        onChange={() => setQuizMode("dream")}
+                        style={{ marginRight: 6 }}
+                      />
+                      Dream Quiz
+                    </label>
                   </div>
-                  <button className="btn" disabled={!canStart} onClick={startQuiz} style={{marginLeft:8}}>Start</button>
+
+                  <button
+                    className="btn"
+                    disabled={!canStart}
+                    onClick={startQuiz}
+                    style={{ marginLeft: 8 }}
+                  >
+                    Start
+                  </button>
                 </div>
               </div>
             )}
 
+            {/* ACTIVE QUIZ */}
             {started && questions.length > 0 && (
-              <div className="card">
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div><b>Score:</b> {score} / {qIdx}</div>
-                  <button className="btn" onClick={()=>speak(questions[qIdx].word.term)}>Speak</button>
-                </div>
-                <div className="progress quiz-progress">
-                  <div className="progress-fill" style={{width:`${progressPct}%`}}></div>
-                </div>
-                <div className="question-block">
-                  <h2>{questions[qIdx].prompt}</h2>
-                  {questions[qIdx].choices.map((c) => (
-                    <button
-                      key={c}
-                      disabled={locked}
-                      className="btn answer"
-                      onClick={()=>onAnswer(c)}
-                    >
-                      {c}
+              <div>
+                {quizMode === "dream" && dreamGif && (
+                  <div
+                    className="card"
+                    style={{ marginBottom: 12, textAlign: "center" }}
+                  >
+                    <img
+                      src={dreamGif}
+                      alt="Dream Quiz hint"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "240px",
+                        borderRadius: "12px"
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="card">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }}
+                  >
+                    <div>
+                      <b>Score:</b> {score} / {qIdx}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="btn"
+                        onClick={() => speak(questions[qIdx].word.term)}
+                      >
+                        Speak
+                      </button>
+                      <button
+                        className="btn"
+                        onClick={readQuestionAndChoices}
+                      >
+                        Read Question & Choices
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="progress quiz-progress">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${progressPct}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="question-block">
+                    <h2>{questions[qIdx].prompt}</h2>
+                    {questions[qIdx].choices.map((c) => (
+                      <button
+                        key={c}
+                        disabled={locked}
+                        className="btn answer"
+                        onClick={() => onAnswer(c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+
+                    <div style={{ marginTop: 12 }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setShowHint((prev) => !prev)}
+                      >
+                        {showHint ? "Hide Hint" : "Show Hint"}
+                      </button>
+                      <div style={{ marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={forceHintNow}
+                        >
+                          Force Hint
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="hint-area"
+                    aria-live="polite"
+                    style={{ marginTop: 12 }}
+                  >
+                    {hintType === "noHint" ? (
+                      <span className="muted">
+                        No hint selected for this question.
+                      </span>
+                    ) : showHint ? (
+                      <span>
+                        <b>Hint:</b>{" "}
+                        {getHintText(questions[qIdx].word, hintType)}
+                      </span>
+                    ) : (
+                      <span className="muted">
+                        Hint available. Use the "Show Hint" button above to reveal it.
+                      </span>
+                    )}
+                  </div>
+
+                  {locked && (
+                    <button className="btn" onClick={next}>
+                      Next
                     </button>
-                  ))}
-                </div>
-                <div className="hint-area" aria-live="polite" style={{marginTop:12}}>
-                  {hintType === "noHint" ? (
-                    <span className="muted">No hint this time.</span>
-                  ) : (
-                    <span><b>Hint:</b> {getHintText(questions[qIdx].word, hintType)}</span>
                   )}
                 </div>
-
-                {locked && <button className="btn" onClick={next}>Next</button>}
               </div>
             )}
           </div>

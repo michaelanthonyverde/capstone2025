@@ -7,14 +7,12 @@
     { term: "capricious", definition: "sudden and unaccountable changes of mood or behavior", partOfSpeech: "adj.", hint: "Whims on a dime." }
   ];
 
-  const SOURCE = (window.WORDS && Array.isArray(window.WORDS) && window.WORDS.length)
-    ? window.WORDS
-    : DEFAULT_WORDS;
+  const SOURCE = (window.WORDS && Array.isArray(window.WORDS) && window.WORDS.length) ? window.WORDS : DEFAULT_WORDS;
 
-  const scoreEl   = document.getElementById("score");
-  const qEl       = document.getElementById("question");
+  const scoreEl = document.getElementById("score");
+  const qEl = document.getElementById("question");
   const answersEl = document.getElementById("answers");
-  const nextBtn   = document.getElementById("nextBtn");
+  const nextBtn = document.getElementById("nextBtn");
 
   const shuffle = (arr) => {
     const a = arr.slice();
@@ -26,19 +24,19 @@
   };
 
   const buildChoices = (correct, pool) => {
-    const wrongs = shuffle(pool.filter(d => d !== correct)).slice(0, 3);
+    const wrongs = shuffle(pool.filter((d) => d !== correct)).slice(0, 3);
     return shuffle([correct, ...wrongs]);
   };
 
-  let questions = SOURCE.map(w => ({
+  let questions = SOURCE.map((w) => ({
     prompt: `What is the best definition of "${w.term}" (${w.partOfSpeech})?`,
     correct: w.definition,
     hint: w.hint || "",
     choices: []
   }));
 
-  const defs = SOURCE.map(w => w.definition);
-  questions.forEach(q => q.choices = buildChoices(q.correct, defs));
+  const defs = SOURCE.map((w) => w.definition);
+  questions.forEach((q) => (q.choices = buildChoices(q.correct, defs)));
   questions = shuffle(questions);
 
   let qIdx = 0;
@@ -55,7 +53,7 @@
     qEl.textContent = q.prompt;
     answersEl.innerHTML = "";
 
-    q.choices.forEach(choice => {
+    q.choices.forEach((choice) => {
       const btn = document.createElement("button");
       btn.textContent = choice;
       btn.className = "btn";
@@ -72,7 +70,7 @@
     if (locked) return;
     locked = true;
 
-    Array.from(answersEl.children).forEach(btn => {
+    Array.from(answersEl.children).forEach((btn) => {
       const isRight = btn.textContent === questions[qIdx].correct;
       btn.style.border = isRight ? "2px solid #2aa84a" : "2px solid #cc3a3a";
       btn.disabled = true;

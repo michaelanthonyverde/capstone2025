@@ -157,7 +157,7 @@
           const v = parseInt(localStorage.getItem('gre.customCount') || '20', 10);
           return Number.isFinite(v) && v > 0 ? v : 20;
         });
-        const [quizMode, setQuizMode] = React.useState('quick'); // quick | study | dream
+        const [quizMode, setQuizMode] = React.useState('quick');
         const [started, setStarted] = React.useState(false);
         const [qIdx, setQIdx] = React.useState(0);
         const [score, setScore] = React.useState(0);
@@ -177,7 +177,7 @@
               const j = await r.json();
               setAllWords(j);
             } catch (e) {
-              setError("Couldn't load words_difficulty.json — using fallback.");
+              setError("Couldn't load words_difficulty.json - using fallback.");
               setAllWords([
                 { term: "pithy", definition: "concise and forcefully expressive", difficulty: "high_frequency" },
                 { term: "abate", definition: "to become less intense or widespread", difficulty: "common" },
@@ -231,7 +231,7 @@
         }, [countMode, customCount, availableCount]);
         const countError = React.useMemo(() => {
           if (countMode !== 'custom') return '';
-          if (!Number.isInteger(customCount) || customCount < 1) return 'Enter a number ≥ 1';
+          if (!Number.isInteger(customCount) || customCount < 1) return 'Enter a number >= 1';
           if (customCount > availableCount) return `Max available for this difficulty is ${availableCount}`;
           return '';
         }, [countMode, customCount, availableCount]);
@@ -293,7 +293,6 @@
         }
 
         function forceHintNow() {
-          // If no hint exists, force a definition-based hint
           if (hintType === "noHint") {
             setHintType("definition");
           }
@@ -477,7 +476,6 @@
               </div>
             )}
 
-            {/* SETUP CARD */}
             {!started && (
               <div className="card">
                 <label>
@@ -596,7 +594,6 @@
               </div>
             )}
 
-            {/* ACTIVE QUIZ */}
             {started && questions.length > 0 && (
               <div>
                 {quizMode === "dream" && dreamGif && (
@@ -721,4 +718,3 @@
     </script>
   </body>
   </html>
-

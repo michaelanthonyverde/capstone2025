@@ -28,64 +28,79 @@
 
   <main class="container section-lg">
     <div id="live" class="sr-status" aria-live="polite">Loading results...</div>
-
     <div id="resultsRoot" class="stack fade-slide"></div>
   </main>
+
   <script>
-    (function(){
+    (function () {
       const root = document.getElementById('resultsRoot');
-      function el(tag, cls, text){
-        const x = document.createElement(tag);
-        if (cls) x.className = cls;
-        if (text != null) x.textContent = text;
-        return x;
+
+      function el(tag, cls, text) {
+        const element = document.createElement(tag);
+        if (cls) element.className = cls;
+        if (text != null) element.textContent = text;
+        return element;
       }
-      function read(key){
-        try { const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e){ return null; }
+
+      function read(key) {
+        try {
+          const value = sessionStorage.getItem(key);
+          return value ? JSON.parse(value) : null;
+        } catch (e) {
+          return null;
+        }
       }
 
       const summary = read('gre.summary');
       const results = read('gre.results') || [];
 
-      if (!summary || !Array.isArray(results) || results.length === 0){
-        const card = el('div','card');
+      if (!summary || !Array.isArray(results) || results.length === 0) {
+        const card = el('div', 'card');
         card.append(el('h2', null, 'No results found'));
-        card.append(el('p','muted','Start a new quiz to see your results.'));
+        card.append(el('p', 'muted', 'Start a new quiz to see your results.'));
         const actions = el('div');
-        const btn = el('a','btn','Start a Quiz'); btn.href = 'quiz.html';
-        actions.append(btn); card.append(actions);
+        const btn = el('a', 'btn', 'Start a Quiz');
+        btn.href = 'quiz.html';
+        actions.append(btn);
+        card.append(actions);
         root.append(card);
         document.getElementById('live').textContent = 'No results found';
         return;
       }
 
-      const sumCard = el('div','card fade-slide');
+      const sumCard = el('div', 'card fade-slide');
       sumCard.append(el('h1', null, 'Results'));
-      const p = el('p');
-      p.innerHTML = `<b>Score:</b> ${summary.correct} / ${summary.total} &nbsp; <b>Percent:</b> ${summary.percent}%`;
-      sumCard.append(p);
-      const bd = summary.byDifficulty || {};
-      const dl = el('div','row');
-      const label = (k)=>({high_frequency:'High Frequency',basic:'Basic',common:'Common',advanced:'Advanced'})[k]||k;
-      ;['high_frequency','basic','common','advanced'].forEach(k => {
-        const v = bd[k] || { total: 0, correct: 0 };
-        const pill = el('span',`pill ${k}`);
+      const summaryText = el('p');
+      summaryText.innerHTML = `<b>Score:</b> ${summary.correct} / ${summary.total} &nbsp; <b>Percent:</b> ${summary.percent}%`;
+      sumCard.append(summaryText);
+      const byDifficulty = summary.byDifficulty || {};
+      const difficultyRow = el('div', 'row');
+      const label = (key) =>
+        ({ high_frequency: 'High Frequency', basic: 'Basic', common: 'Common', advanced: 'Advanced' }[key] || key);
+      ['high_frequency', 'basic', 'common', 'advanced'].forEach((key) => {
+        const value = byDifficulty[key] || { total: 0, correct: 0 };
+        const pill = el('span', `pill ${key}`);
         pill.style.marginRight = '8px';
-        pill.textContent = `${label(k)}: ${v.correct}/${v.total}`;
-        dl.append(pill);
+        pill.textContent = `${label(key)}: ${value.correct}/${value.total}`;
+        difficultyRow.append(pill);
       });
-      sumCard.append(dl);
-      const actionsTop = el('div','results-actions');
-      const retake = el('a','btn','Retake Quiz'); retake.href='quiz.html'; actionsTop.append(retake);
-      const home = el('a','btn btn-ghost'); home.textContent='Home'; home.href='index.html'; actionsTop.append(home);
+      sumCard.append(difficultyRow);
+      const actionsTop = el('div', 'results-actions');
+      const retake = el('a', 'btn', 'Retake Quiz');
+      retake.href = 'quiz.html';
+      actionsTop.append(retake);
+      const home = el('a', 'btn btn-ghost');
+      home.textContent = 'Home';
+      home.href = 'index.html';
+      actionsTop.append(home);
       sumCard.append(actionsTop);
       root.append(sumCard);
 
-      const toolbar = el('div','results-toolbar fade-slide');
+      const toolbar = el('div', 'results-toolbar fade-slide');
       const filters = el('div');
-      const btnAll = el('button','btn btn-ghost','All');
-      const btnCorrect = el('button','btn btn-ghost','Correct');
-      const btnIncorrect = el('button','btn btn-ghost','Incorrect');
+      const btnAll = el('button', 'btn btn-ghost', 'All');
+      const btnCorrect = el('button', 'btn btn-ghost', 'Correct');
+      const btnIncorrect = el('button', 'btn btn-ghost', 'Incorrect');
       filters.append(btnAll, btnCorrect, btnIncorrect);
       const search = el('input');
       search.type = 'search';
@@ -96,49 +111,69 @@
       toolbar.append(filters, search);
       root.append(toolbar);
 
-      const list = el('div','stack');
+      const list = el('div', 'stack');
       root.append(list);
 
+      const allowedDiffs = new Set(['high_frequency', 'basic', 'common', 'advanced']);
       let state = { mode: 'all', q: '' };
-      const allowedDiffs = new Set(['high_frequency','basic','common','advanced']);
 
-      function apply(){
+      function apply() {
         list.innerHTML = '';
         let items = results.slice();
-        if (state.mode === 'correct') items = items.filter(r => r.isCorrect);
-        if (state.mode === 'incorrect') items = items.filter(r => !r.isCorrect);
-        if (state.q) items = items.filter(r => (r.term||'').toLowerCase().includes(state.q));
-        items.forEach(r => {
-          const card = el('div','card result-item word-card fade-slide');
-          const top = el('div','row');
-          const badge = el('span', 'badge ' + (r.isCorrect ? 'correct':'incorrect'), r.isCorrect ? 'Correct' : 'Incorrect');
+        if (state.mode === 'correct') items = items.filter((r) => r.isCorrect);
+        if (state.mode === 'incorrect') items = items.filter((r) => !r.isCorrect);
+        if (state.q) items = items.filter((r) => (r.term || '').toLowerCase().includes(state.q));
+        items.forEach((r) => {
+          const card = el('div', 'card result-item word-card fade-slide');
+          const top = el('div', 'row');
+          const badge = el('span', 'badge ' + (r.isCorrect ? 'correct' : 'incorrect'), r.isCorrect ? 'Correct' : 'Incorrect');
           top.append(badge);
           const diffKey = (r.difficulty || '').toLowerCase();
           const pillClass = allowedDiffs.has(diffKey) ? `pill ${diffKey}` : 'pill';
           const pill = el('span', pillClass);
-          pill.style.marginLeft='8px';
+          pill.style.marginLeft = '8px';
           const labelText = allowedDiffs.has(diffKey) ? label(diffKey) : 'Unknown';
           pill.textContent = labelText;
           top.append(pill);
           card.append(top);
-          const term = el('h3','term', r.term);
-          const pos = el('span','part-of-speech', ' ' + (r.partOfSpeech || '—'));
+          const term = el('h3', 'term', r.term);
+          const pos = el('span', 'part-of-speech', ' ' + (r.partOfSpeech || '?'));
           term.appendChild(pos);
           card.append(term);
-          const def = el('p','definition'); def.innerHTML = `<b>Definition:</b> ${r.definition}`; def.title = r.definition; card.append(def);
+          const def = el('p', 'definition');
+          def.innerHTML = `<b>Definition:</b> ${r.definition}`;
+          def.title = r.definition;
+          card.append(def);
           if (!r.isCorrect) {
-            const ya = el('p','your-answer'); ya.innerHTML = `<b>Your answer:</b> ${r.chosen}`; card.append(ya);
+            const ya = el('p', 'your-answer');
+            ya.innerHTML = `<b>Your answer:</b> ${r.chosen}`;
+            card.append(ya);
           }
           if (r.example) {
-            const ex = el('p','muted'); ex.innerHTML = `<b>Example:</b> ${r.example}`; card.append(ex);
+            const ex = el('p', 'muted');
+            ex.innerHTML = `<b>Example:</b> ${r.example}`;
+            card.append(ex);
           }
           list.append(card);
         });
       }
-      btnAll.onclick = () => { state.mode='all'; apply(); };
-      btnCorrect.onclick = () => { state.mode='correct'; apply(); };
-      btnIncorrect.onclick = () => { state.mode='incorrect'; apply(); };
-      search.oninput = (e) => { state.q = (e.target.value||'').toLowerCase(); apply(); };
+
+      btnAll.onclick = () => {
+        state.mode = 'all';
+        apply();
+      };
+      btnCorrect.onclick = () => {
+        state.mode = 'correct';
+        apply();
+      };
+      btnIncorrect.onclick = () => {
+        state.mode = 'incorrect';
+        apply();
+      };
+      search.oninput = (event) => {
+        state.q = (event.target.value || '').toLowerCase();
+        apply();
+      };
 
       apply();
       document.getElementById('live').textContent = 'Results loaded';
@@ -147,4 +182,3 @@
 
 </body>
 </html>
-
